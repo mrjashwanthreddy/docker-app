@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  jwt-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME}/jwt-demo:latest
+    container_name: jwt-authentication-app
+    ports:
+      - "8080:8080"
+    volumes:
+      # Persist H2 database data
+      - jwt-data:/app/data
+    environment:
+      # Override these in production
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/public/hello"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - jwt-network
+
+volumes:
+  jwt-data:
+    driver: local
+
+networks:
+  jwt-network:
+    driver: bridge
